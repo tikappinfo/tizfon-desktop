@@ -1,0 +1,66 @@
+name: Release (build + SignPath sign)
+
+# Builds the Windows installer on a native Windows runner (no wine), code-signs
+# it through SignPath's free OSS program, and attaches the SIGNED installer to a
+# GitHub Release. Trigger by pushing a tag like `v1.0.2`, or run manually.
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write   # create the GitHub Release
+  id-token: write   # SignPath OIDC trust
+
+jobs:
+  build-sign:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build the unpacked app (native — no wine needed on Windows)
+        run: npx electron-builder --win dir --x64
+
+      - name: Install NSIS
+        run: choco install nsis -y --no-progress
+
+      - name: Build the installer
+        shell: pwsh
+        run: |
+          $nsis = "C:\Program Files (x86)\NSIS\makensis.exe"
+          & $nsis "/DSRCDIR=dist\win-unpacked" "/DICON=build\icon.ico" installer.nsi
+          Get-ChildItem dist\*.exe
+
+      - name: Upload unsigned installer (so SignPath can fetch it)
+        id: unsigned
+        uses: actions/upload-artifact@v4
+        with:
+          name: installer-unsigned
+          path: dist/Tizfon-Setup-*.exe
+
+      # ── Code-sign through SignPath (free OSS program) ────────────────────────
+      # Fill the org id + slugs after your project is approved (see SIGNING-SETUP.md).
+      - name: Sign with SignPath
+        uses: signpath/github-action-submit-signing-request@v1
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ secrets.SIGNPATH_ORG_ID }}
+          project-slug: tizfon-desktop
+          signing-policy-slug: release-signing
+          github-artifact-id: ${{ steps.unsigned.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: dist-signed
+
+      - name: Publish signed installer to the GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist-signed/Tizfon-Setup-*.exe
+          fail_on_unmatched_files: true

@@ -37,6 +37,9 @@ jobs:
         run: |
           $nsis = "C:\Program Files (x86)\NSIS\makensis.exe"
           & $nsis "/DSRCDIR=dist\win-unpacked" "/DICON=build\icon.ico" installer.nsi
+          # Copy to a STABLE, version-less name so the SignPath artifact config
+          # (which pins the file name) never needs changing between releases.
+          Copy-Item dist\Tizfon-Setup-*.exe dist\Tizfon-Setup.exe -Force
           Get-ChildItem dist\*.exe
 
       - name: Upload unsigned installer (so SignPath can fetch it)
@@ -44,7 +47,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: installer-unsigned
-          path: dist/Tizfon-Setup-*.exe
+          path: dist/Tizfon-Setup.exe
 
       # ── Code-sign through SignPath (free OSS program) ────────────────────────
       # Fill the org id + slugs after your project is approved (see SIGNING-SETUP.md).
@@ -62,5 +65,5 @@ jobs:
       - name: Publish signed installer to the GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: dist-signed/Tizfon-Setup-*.exe
+          files: dist-signed/Tizfon-Setup.exe
           fail_on_unmatched_files: true

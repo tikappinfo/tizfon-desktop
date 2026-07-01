@@ -1,0 +1,31 @@
+name: Build Microsoft Store package (.appx)
+
+# Builds the Store (.appx) package on a native Windows runner. Run manually AFTER
+# the Partner Center identity values are filled into package.json (build.appx).
+# Download the resulting artifact and upload it in Partner Center.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  appx:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build the Store package (.appx)
+        run: npx electron-builder --win appx --x64
+
+      - name: Upload the .appx
+        uses: actions/upload-artifact@v4
+        with:
+          name: tizfon-store-appx
+          path: dist/*.appx
+          if-no-files-found: error

@@ -34,6 +34,17 @@
       "shortcutName": "Tizfon",
       "installerIcon": "build/icon.ico",
       "uninstallerIcon": "build/icon.ico"
+    },
+    "appx": {
+      "applicationId": "Tizfon",
+      "displayName": "Tizfon",
+      "backgroundColor": "#0b0b0d",
+      "showNameOnTiles": true,
+      "languages": ["en-US"],
+      "_comment": "Fill these three from Partner Center (Product identity) before building the Store package with: electron-builder --win appx",
+      "identityName": "REPLACE_IDENTITY_NAME",
+      "publisher": "CN=REPLACE_PUBLISHER_CN",
+      "publisherDisplayName": "REPLACE_PUBLISHER_DISPLAY_NAME"
     }
   },
   "devDependencies": {

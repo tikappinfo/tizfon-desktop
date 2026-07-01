@@ -122,6 +122,8 @@ function downloadVerify(url, dest, expectSha) {
 }
 
 async function checkForUpdates(manual) {
+  // In the Microsoft Store build, the Store handles updates — never self-update.
+  if (process.windowsStore) return;
   if (updateChecking) return;
   if (pendingInstaller) { if (manual) promptAndApply(); return; }
   updateChecking = true;
@@ -240,12 +242,15 @@ function createTray() {
 function refreshTray() {
   if (!tray) return;
   const items = [{ label: 'Open Tizfon', click: () => showWindow() }, { type: 'separator' }];
-  if (pendingInstaller) {
-    items.push({ label: 'Restart to update (v' + pendingVersion + ')', click: () => applyUpdate() });
-  } else {
-    items.push({ label: 'Check for updates…', click: () => checkForUpdates(true) });
+  // The Store build updates through the Store, so hide the self-update controls.
+  if (!process.windowsStore) {
+    if (pendingInstaller) {
+      items.push({ label: 'Restart to update (v' + pendingVersion + ')', click: () => applyUpdate() });
+    } else {
+      items.push({ label: 'Check for updates…', click: () => checkForUpdates(true) });
+    }
+    items.push({ type: 'separator' });
   }
-  items.push({ type: 'separator' });
   items.push({ label: 'Quit Tizfon', click: () => { isQuitting = true; app.quit(); } });
   tray.setContextMenu(Menu.buildFromTemplate(items));
 }
